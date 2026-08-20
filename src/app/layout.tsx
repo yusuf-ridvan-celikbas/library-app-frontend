@@ -30,6 +30,17 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Kütüphanem',
   description: 'Kişisel kütüphane yönetimi',
+  // iOS Safari, web app manifest'i tam desteklemez — "Ana Ekrana Ekle"
+  // sonrası standalone (adres çubuğusuz) açılması ve doğru ikonu
+  // göstermesi için bu Apple'a özgü etiketler ayrıca gerekir.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kütüphanem',
+  },
+  icons: {
+    apple: '/icon-192.png',
+  },
 };
 
 export const viewport: Viewport = {

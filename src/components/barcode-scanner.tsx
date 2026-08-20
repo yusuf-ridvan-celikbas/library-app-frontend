@@ -29,6 +29,11 @@ export function BarcodeScanner({ onDetected, onError }: BarcodeScannerProps) {
     // sınırlamak hem yanlış-pozitifleri azaltır hem de kod çözmeyi hızlandırır.
     const hints = new Map();
     hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]);
+    // TRY_HARDER: ZXing zorlu/net olmayan karelerde daha fazla hesaplama
+    // gücü harcayarak ek denemeler yapar. Sürekli tarama modunda (her
+    // karede çalıştığı için) CPU maliyeti kabul edilebilir; başarı
+    // oranını belirgin şekilde artırır.
+    hints.set(DecodeHintType.TRY_HARDER, true);
     const reader = new BrowserMultiFormatReader(hints);
 
     let cancelled = false;
@@ -38,7 +43,22 @@ export function BarcodeScanner({ onDetected, onError }: BarcodeScannerProps) {
 
       try {
         const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: 'environment' } }, // mobilde arka kamera tercih edilir
+          {
+            video: {
+              facingMode: 'environment', // mobilde arka kamera tercih edilir
+              // Çözünürlük belirtilmezse taraycı genelde düşük bir
+              // varsayılana (örn. 640x480) düşer — barkodun ince
+              // çizgilerini ayırt etmek için bu yetersiz kalır. 'ideal'
+              // olduğu için cihaz desteklemese bile hata vermez, sadece
+              // en yakın desteklenen değeri kullanır.
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              // Sürekli otomatik odaklanma — çoğu telefon zaten varsayılan
+              // olarak yapar, ama bazı taraycılarda açıkça istemek gerekir.
+              // Desteklenmeyen cihazlarda sessizce yok sayılır.
+              advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
+            },
+          },
           videoRef.current,
           (result) => {
             if (result && !cancelled) {
@@ -72,20 +92,24 @@ export function BarcodeScanner({ onDetected, onError }: BarcodeScannerProps) {
   }, []);
 
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm bg-ink">
+    // aspect-[3/4] yerine daha geniş bir alan: dar bir kutu, kameranın
+    // geniş görüş alanını object-cover ile kırparken barkodu kenardan
+    // kesebiliyordu. Ekranın büyük kısmını kaplayan bir alan bu riski
+    // azaltır.
+    <div className="relative h-[70vh] w-full overflow-hidden rounded-sm bg-ink">
       <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
 
       {/* Hedefleme çerçevesi — imza öge: bir büyüteç/loupe hissi */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-24 w-4/5 rounded-sm border-2 border-brass shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+        <div className="h-36 w-[92%] rounded-sm border-2 border-brass shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
       </div>
 
       {status === 'starting' && (
         <p className="absolute inset-x-0 bottom-4 text-center text-sm text-paper/80">Kamera açılıyor…</p>
       )}
       {status === 'scanning' && (
-        <p className="absolute inset-x-0 bottom-4 text-center text-sm text-paper/80">
-          Barkodu çerçeveye hizalayın
+        <p className="absolute inset-x-0 bottom-4 px-6 text-center text-sm text-paper/80">
+          Barkodu çerçeveye hizalayın · ~20 cm uzaklıkta, sabit tutun
         </p>
       )}
     </div>
