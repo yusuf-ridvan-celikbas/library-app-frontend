@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { api, ApiError } from '@/lib/api-client';
 import type { Book, PaginatedResponse } from '@/types/api';
@@ -69,9 +70,20 @@ export default function BooksPage() {
             <p className="call-number text-xs text-oak/60">KÜTÜPHANEM</p>
             <h1 className="font-display text-2xl font-medium text-ink">Rafım</h1>
           </div>
-          <Button variant="ghost" onClick={() => logout()} className="text-ink/60 hover:text-ink">
-            Çıkış yap
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Not: Button'ın asChild prop'u bu shadcn sürümünde
+                desteklenmiyor; navigasyon linkleri için doğrudan
+                stillendirilmiş <Link> kullanıyoruz. */}
+            <Link
+              href="/books/scan"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-oak px-4 text-sm font-medium text-paper transition-colors hover:bg-oak/90"
+            >
+              + Kitap ekle
+            </Link>
+            <Button variant="ghost" onClick={() => logout()} className="text-ink/60 hover:text-ink">
+              Çıkış yap
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -100,7 +112,10 @@ export default function BooksPage() {
               <li key={book.id} className="flex overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
                 {/* Kitap sırtı şeridi — imza tasarım ögesi */}
                 <div className="w-1.5 shrink-0 bg-spine" />
-                <div className="flex flex-1 items-start justify-between gap-4 px-4 py-3">
+                <Link
+                  href={`/books/${book.id}`}
+                  className="flex flex-1 items-start justify-between gap-4 px-4 py-3 transition-colors hover:bg-oak/5"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-display text-lg text-ink">{book.title}</p>
                     {book.authors.length > 0 && (
@@ -117,7 +132,7 @@ export default function BooksPage() {
                   >
                     {book.status_label}
                   </span>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>
