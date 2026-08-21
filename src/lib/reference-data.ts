@@ -10,6 +10,12 @@ interface ReferenceLists {
   locations: Location[];
   tags: Tag[];
   isLoading: boolean;
+  /** Satır içi "hızlı ekle" ile oluşturulan yeni bir öğeyi listeye ekler
+   *  (sunucuya tekrar sorgu atmadan, anında UI'da görünür). */
+  addAuthor: (item: Author) => void;
+  addPublisher: (item: Publisher) => void;
+  addLocation: (item: Location) => void;
+  addTag: (item: Tag) => void;
 }
 
 /**
@@ -41,5 +47,15 @@ export function useReferenceLists(): ReferenceLists {
       .finally(() => setIsLoading(false));
   }, []);
 
-  return { authors, publishers, locations, tags, isLoading };
+  return {
+    authors,
+    publishers,
+    locations,
+    tags,
+    isLoading,
+    addAuthor: (item: Author) => setAuthors((prev) => [...prev, item]),
+    addPublisher: (item: Publisher) => setPublishers((prev) => [...prev, item]),
+    addLocation: (item: Location) => setLocations((prev) => [...prev, item]),
+    addTag: (item: Tag) => setTags((prev) => [...prev, item]),
+  };
 }

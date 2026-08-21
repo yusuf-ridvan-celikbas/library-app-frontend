@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api-client';
 import { useReferenceLists } from '@/lib/reference-data';
+import { SearchableMultiSelect, SearchableSingleSelect, LocationCombobox } from '@/components/searchable-select';
 import type { ApiItemResponse, Book, BookStatus } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +55,8 @@ function bookToForm(book: Book): FormState {
 export default function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { authors, publishers, locations, tags, isLoading: refsLoading } = useReferenceLists();
+  const { authors, publishers, locations, tags, isLoading: refsLoading, addAuthor, addPublisher, addLocation, addTag } =
+    useReferenceLists();
 
   const [book, setBook] = useState<Book | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
@@ -201,42 +203,26 @@ export default function BookDetailPage() {
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="location">Konum</Label>
-              <select
-                id="location"
-                value={form.locationId}
-                onChange={(e) => setForm({ ...form, locationId: e.target.value })}
-                disabled={refsLoading}
-                className="w-full rounded-md border border-oak/20 bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-brass"
-              >
-                <option value="">— Belirtilmemiş —</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.display_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!refsLoading && (
+              <LocationCombobox
+                items={locations}
+                selectedId={form.locationId}
+                onChange={(id) => setForm({ ...form, locationId: id })}
+                onCreated={addLocation}
+              />
+            )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="publisher">Yayınevi</Label>
-            <select
-              id="publisher"
-              value={form.publisherId}
-              onChange={(e) => setForm({ ...form, publisherId: e.target.value })}
-              disabled={refsLoading}
-              className="w-full rounded-md border border-oak/20 bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-brass"
-            >
-              <option value="">— Belirtilmemiş —</option>
-              {publishers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!refsLoading && (
+            <SearchableSingleSelect
+              label="Yayınevi"
+              items={publishers}
+              selectedId={form.publisherId}
+              onChange={(id) => setForm({ ...form, publisherId: id })}
+              createEndpoint="/publishers"
+              onCreated={addPublisher}
+            />
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -261,62 +247,27 @@ export default function BookDetailPage() {
           </div>
         </fieldset>
 
-        <fieldset className="space-y-3 rounded-sm border border-oak/10 bg-paper-elevated px-6 py-5">
-          <legend className="call-number px-1 text-xs text-oak/60">Yazarlar</legend>
-          {refsLoading ? (
-            <p className="text-sm text-ink/40">Yükleniyor…</p>
-          ) : authors.length === 0 ? (
-            <p className="text-sm text-ink/40">Henüz kayıtlı yazar yok.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {authors.map((a) => {
-                const selected = form.authorIds.includes(a.id);
-                return (
-                  <button
-                    type="button"
-                    key={a.id}
-                    onClick={() => toggleId('authorIds', a.id)}
-                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                      selected
-                        ? 'border-oak bg-oak text-paper'
-                        : 'border-oak/20 bg-paper text-ink/70 hover:border-oak/40'
-                    }`}
-                  >
-                    {a.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </fieldset>
+        {!refsLoading && (
+          <SearchableMultiSelect
+            label="Yazarlar"
+            items={authors}
+            selectedIds={form.authorIds}
+            onToggle={(id) => toggleId('authorIds', id)}
+            createEndpoint="/authors"
+            onCreated={addAuthor}
+          />
+        )}
 
-        <fieldset className="space-y-3 rounded-sm border border-oak/10 bg-paper-elevated px-6 py-5">
-          <legend className="call-number px-1 text-xs text-oak/60">Etiketler</legend>
-          {refsLoading ? (
-            <p className="text-sm text-ink/40">Yükleniyor…</p>
-          ) : tags.length === 0 ? (
-            <p className="text-sm text-ink/40">Henüz kayıtlı etiket yok.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((t) => {
-                const selected = form.tagIds.includes(t.id);
-                return (
-                  <button
-                    type="button"
-                    key={t.id}
-                    onClick={() => toggleId('tagIds', t.id)}
-                    style={selected ? { backgroundColor: t.color, borderColor: t.color } : undefined}
-                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                      selected ? 'text-paper' : 'border-oak/20 bg-paper text-ink/70 hover:border-oak/40'
-                    }`}
-                  >
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </fieldset>
+        {!refsLoading && (
+          <SearchableMultiSelect
+            label="Etiketler"
+            items={tags}
+            selectedIds={form.tagIds}
+            onToggle={(id) => toggleId('tagIds', id)}
+            createEndpoint="/tags"
+            onCreated={addTag}
+          />
+        )}
 
         {error && <p className="text-sm text-spine">{error}</p>}
         {savedMessage && <p className="text-sm text-moss">{savedMessage}</p>}
