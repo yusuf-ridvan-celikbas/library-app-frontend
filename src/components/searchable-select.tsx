@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { api } from '@/lib/api-client';
+import { api, ApiError } from '@/lib/api-client';
 import type { ApiItemResponse, Location } from '@/types/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -45,12 +45,16 @@ export function SearchableMultiSelect<T extends NamedItem>({
   items: T[];
   selectedIds: string[];
   onToggle: (id: string) => void;
-  createEndpoint: string;
-  onCreated: (item: T) => void;
+  /** Verilmezse "+ ... olarak ekle" seçeneği gösterilmez (örn. sadece
+   *  mevcut kütüphaneden seçim yapılan yerlerde, yeni kayıt oluşturmak
+   *  istenmediğinde). */
+  createEndpoint?: string;
+  onCreated?: (item: T) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const selectedItems = items.filter((i) => selectedIds.includes(i.id));
   const triggerLabel =
@@ -61,15 +65,22 @@ export function SearchableMultiSelect<T extends NamedItem>({
         : `${selectedItems.length} ${label.toLowerCase()} seçili`;
 
   async function handleCreate() {
-    if (!search.trim() || isCreating) return;
+    if (!search.trim() || isCreating || !createEndpoint) return;
     setIsCreating(true);
+    setCreateError(null);
     try {
       const res = await api.post<ApiItemResponse<T>>(createEndpoint, { name: search.trim() });
-      onCreated(res.data);
+      onCreated?.(res.data);
       onToggle(res.data.id);
       setSearch('');
-    } catch {
-      // Sessizce yut; kullanıcı Command'ın boş state'inde tekrar deneyebilir.
+    } catch (err) {
+      // Alan-spesifik hata varsa (örn. "Bu isimde bir yazar zaten
+      // kayıtlı.") onu göster, yoksa genel mesaja düş — önceden bu hata
+      // tamamen sessizce yutuluyordu, kullanıcı hiçbir geri bildirim
+      // almıyordu.
+      setCreateError(
+        err instanceof ApiError ? (err.fieldError('name') ?? err.message) : 'Eklenemedi.',
+      );
     } finally {
       setIsCreating(false);
     }
@@ -88,14 +99,19 @@ export function SearchableMultiSelect<T extends NamedItem>({
             <CommandInput placeholder={`${label} ara…`} value={search} onValueChange={setSearch} />
             <CommandList>
               <CommandEmpty>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={!search.trim() || isCreating}
-                  className="w-full px-3 py-2 text-left text-sm text-brass hover:bg-oak/5"
-                >
-                  {isCreating ? 'Ekleniyor…' : `+ "${search}" olarak ekle`}
-                </button>
+                {createEndpoint ? (
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={!search.trim() || isCreating}
+                    className="w-full px-3 py-2 text-left text-sm text-brass hover:bg-oak/5"
+                  >
+                    {isCreating ? 'Ekleniyor…' : `+ "${search}" olarak ekle`}
+                  </button>
+                ) : (
+                  <p className="px-3 py-2 text-sm text-ink/40">Sonuç bulunamadı.</p>
+                )}
+                {createError && <p className="px-3 pb-2 text-xs text-spine">{createError}</p>}
               </CommandEmpty>
               <CommandGroup>
                 {items.map((item) => {
@@ -140,28 +156,30 @@ export function SearchableSingleSelect<T extends NamedItem>({
   items: T[];
   selectedId: string;
   onChange: (id: string) => void;
-  /** Verilmezse "+ ... olarak ekle" seçeneği gösterilmez (örn. Kitap seçiminde
-   *  yanlışlıkla eksik bilgili bir kitap oluşturulmasını önlemek için). */
   createEndpoint?: string;
   onCreated?: (item: T) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const selectedItem = items.find((i) => i.id === selectedId);
 
   async function handleCreate() {
     if (!search.trim() || isCreating || !createEndpoint) return;
     setIsCreating(true);
+    setCreateError(null);
     try {
       const res = await api.post<ApiItemResponse<T>>(createEndpoint, { name: search.trim() });
       onCreated?.(res.data);
       onChange(res.data.id);
       setSearch('');
       setOpen(false);
-    } catch {
-      // Sessizce yut.
+    } catch (err) {
+      setCreateError(
+        err instanceof ApiError ? (err.fieldError('name') ?? err.message) : 'Eklenemedi.',
+      );
     } finally {
       setIsCreating(false);
     }
@@ -194,6 +212,7 @@ export function SearchableSingleSelect<T extends NamedItem>({
                 ) : (
                   <p className="px-3 py-2 text-sm text-ink/40">Sonuç bulunamadı.</p>
                 )}
+                {createError && <p className="px-3 pb-2 text-xs text-spine">{createError}</p>}
               </CommandEmpty>
               <CommandGroup>
                 <CommandItem

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCrudList } from '@/lib/use-crud-list';
+import { ApiError } from '@/lib/api-client';
 import type { Publisher } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,8 +116,8 @@ function PublisherForm({
     setError(null);
     try {
       await onSubmit({ name: name.trim(), country: country || null });
-    } catch {
-      setError('Kaydedilemedi.');
+    } catch (err) {
+      setError(err instanceof ApiError ? (err.fieldError('name') ?? err.message) : 'Kaydedilemedi.');
     } finally {
       setIsSaving(false);
     }

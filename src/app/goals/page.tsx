@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api-client';
+import { GoalBookList } from '@/components/goal-book-list';
 import type { ApiArrayResponse, GoalPeriod, ReadingGoal } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,6 +118,13 @@ export default function GoalsPage() {
                     {goal.is_on_track ? 'Takip ediyorsunuz' : 'Biraz gerideyseniz de yetişebilirsiniz'}
                   </p>
                 </div>
+
+                <GoalBookList
+                  goal={goal}
+                  onChanged={(updated) =>
+                    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))
+                  }
+                />
               </li>
             ))}
           </ul>

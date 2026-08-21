@@ -150,10 +150,19 @@ export interface ApiErrorResponse {
 
 export type GoalPeriod = 'weekly' | 'monthly' | 'yearly';
 
+export interface GoalBook {
+  id: string;
+  title: string;
+  page_count: number | null;
+  is_finished: boolean;
+}
+
 /**
  * Backend'in ReadingGoalResource'u — ilerleme/tempo alanları (completed_books,
  * suggested_daily_pages vb.) DB'de saklanmaz, her istekte
- * ReadingGoalProgressCalculator tarafından hesaplanır.
+ * ReadingGoalProgressCalculator tarafından hesaplanır. 'books' doluysa
+ * (Faz 3b) hedef "liste modunda" çalışır — target_books de listedeki
+ * kitap sayısına eşitlenir.
  */
 export interface ReadingGoal {
   id: string;
@@ -168,5 +177,6 @@ export interface ReadingGoal {
   days_remaining: number;
   suggested_daily_pages: number;
   is_on_track: boolean;
+  books: GoalBook[];
   created_at: string;
 }

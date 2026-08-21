@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCrudList } from '@/lib/use-crud-list';
+import { ApiError } from '@/lib/api-client';
 import type { Tag } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -114,8 +115,8 @@ function TagForm({
     setError(null);
     try {
       await onSubmit({ name: name.trim(), color });
-    } catch {
-      setError('Kaydedilemedi.');
+    } catch (err) {
+      setError(err instanceof ApiError ? (err.fieldError('name') ?? err.message) : 'Kaydedilemedi.');
     } finally {
       setIsSaving(false);
     }
