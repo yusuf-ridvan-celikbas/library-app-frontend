@@ -65,12 +65,12 @@ export default function BooksPage() {
   return (
     <main className="min-h-screen bg-paper">
       <header className="border-b border-oak/10 bg-paper-elevated">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-5">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="call-number text-xs text-oak/60">KÜTÜPHANEM</p>
             <h1 className="font-display text-2xl font-medium text-ink">Rafım</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Not: Button'ın asChild prop'u bu shadcn sürümünde
                 desteklenmiyor; navigasyon linkleri için doğrudan
                 stillendirilmiş <Link> kullanıyoruz. */}
@@ -79,6 +79,18 @@ export default function BooksPage() {
               className="inline-flex h-9 items-center justify-center rounded-md bg-oak px-4 text-sm font-medium text-paper transition-colors hover:bg-oak/90"
             >
               + Kitap ekle
+            </Link>
+            <Link
+              href="/reading"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
+            >
+              Okuma Geçmişim
+            </Link>
+            <Link
+              href="/loans"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
+            >
+              Emanetler
             </Link>
             <Link
               href="/manage"

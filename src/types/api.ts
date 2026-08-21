@@ -88,7 +88,7 @@ export interface Loan {
   is_overdue: boolean;
   notes: string | null;
   book: Pick<Book, 'id' | 'title'>;
-  borrower: Pick<Borrower, 'id' | 'name'>;
+  borrower: Pick<Borrower, 'id' | 'name'> | null;
   created_at: string;
 }
 
@@ -100,7 +100,7 @@ export interface ReadingSession {
   finished_at: string | null;
   rating: number | null;
   notes: string | null;
-  book: Pick<Book, 'id' | 'title'>;
+  book: Pick<Book, 'id' | 'title' | 'page_count'>;
   created_at: string;
 }
 

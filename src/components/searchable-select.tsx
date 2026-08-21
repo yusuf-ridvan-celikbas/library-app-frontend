@@ -140,8 +140,10 @@ export function SearchableSingleSelect<T extends NamedItem>({
   items: T[];
   selectedId: string;
   onChange: (id: string) => void;
-  createEndpoint: string;
-  onCreated: (item: T) => void;
+  /** Verilmezse "+ ... olarak ekle" seçeneği gösterilmez (örn. Kitap seçiminde
+   *  yanlışlıkla eksik bilgili bir kitap oluşturulmasını önlemek için). */
+  createEndpoint?: string;
+  onCreated?: (item: T) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -150,11 +152,11 @@ export function SearchableSingleSelect<T extends NamedItem>({
   const selectedItem = items.find((i) => i.id === selectedId);
 
   async function handleCreate() {
-    if (!search.trim() || isCreating) return;
+    if (!search.trim() || isCreating || !createEndpoint) return;
     setIsCreating(true);
     try {
       const res = await api.post<ApiItemResponse<T>>(createEndpoint, { name: search.trim() });
-      onCreated(res.data);
+      onCreated?.(res.data);
       onChange(res.data.id);
       setSearch('');
       setOpen(false);
@@ -180,14 +182,18 @@ export function SearchableSingleSelect<T extends NamedItem>({
             <CommandInput placeholder={`${label} ara…`} value={search} onValueChange={setSearch} />
             <CommandList>
               <CommandEmpty>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={!search.trim() || isCreating}
-                  className="w-full px-3 py-2 text-left text-sm text-brass hover:bg-oak/5"
-                >
-                  {isCreating ? 'Ekleniyor…' : `+ "${search}" olarak ekle`}
-                </button>
+                {createEndpoint ? (
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={!search.trim() || isCreating}
+                    className="w-full px-3 py-2 text-left text-sm text-brass hover:bg-oak/5"
+                  >
+                    {isCreating ? 'Ekleniyor…' : `+ "${search}" olarak ekle`}
+                  </button>
+                ) : (
+                  <p className="px-3 py-2 text-sm text-ink/40">Sonuç bulunamadı.</p>
+                )}
               </CommandEmpty>
               <CommandGroup>
                 <CommandItem

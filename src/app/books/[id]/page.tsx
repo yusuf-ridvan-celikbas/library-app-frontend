@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { api, ApiError } from '@/lib/api-client';
 import { useReferenceLists } from '@/lib/reference-data';
 import { SearchableMultiSelect, SearchableSingleSelect, LocationCombobox } from '@/components/searchable-select';
+import { LoanSection } from '@/components/loan-section';
+import { ReadingSection } from '@/components/reading-section';
 import type { ApiItemResponse, Book, BookStatus } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -276,6 +278,24 @@ export default function BookDetailPage() {
           {isSaving ? 'Kaydediliyor…' : 'Kaydet'}
         </Button>
       </form>
+
+      {/* Emanet ve Okuma Geçmişi kasıtlı olarak yukarıdaki <form>'un
+          DIŞINDA: her ikisinin de kendi bağımsız kaydetme aksiyonu var,
+          tek bir dev form içine gömülürse hem UX kafa karıştırır hem de
+          (ileride bir <form> etiketi eklenirse) iç içe <form> hatası
+          riski oluşur. */}
+      <div className="mx-auto max-w-2xl space-y-6 px-4">
+        <LoanSection
+          bookId={book.id}
+          onBookStatusChanged={() => {
+            api.get<ApiItemResponse<Book>>(`/books/${id}`).then((res) => {
+              setBook(res.data);
+              setForm(bookToForm(res.data));
+            });
+          }}
+        />
+        <ReadingSection bookId={book.id} />
+      </div>
     </main>
   );
 }

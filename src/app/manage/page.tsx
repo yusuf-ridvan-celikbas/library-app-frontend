@@ -5,6 +5,7 @@ const CATEGORIES = [
   { href: '/manage/publishers', label: 'Yayınevleri', desc: 'Yayınevi bilgilerini düzenle, sil' },
   { href: '/manage/locations', label: 'Konumlar', desc: 'Oda/raf tanımlarını düzenle, sil' },
   { href: '/manage/tags', label: 'Etiketler', desc: 'Etiket adı ve rengini düzenle, sil' },
+  { href: '/manage/borrowers', label: 'Kişiler', desc: 'Emanet verilen kişileri düzenle, sil' },
 ];
 
 export default function ManageHubPage() {

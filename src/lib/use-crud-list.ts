@@ -45,8 +45,19 @@ export function useCrudList<T extends { id: string }>(endpoint: string, paginate
   }
 
   async function remove(id: string): Promise<void> {
-    await api.delete(`${endpoint}/${id}`);
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    // KRİTİK: Önceden bu fonksiyon hata fırlatıyordu ama hiçbir çağıran
+    // sayfa (manage/authors, manage/borrowers vb.) try/catch kullanmıyordu
+    // — backend meşru bir 409 (örn. "bu kişide hâlâ ödünç kitap var")
+    // döndürdüğünde bu, yakalanmamış bir promise reddine ve tam sayfa
+    // çökme ekranına dönüşüyordu. Artık hata burada yakalanıp zaten var
+    // olan (ve her sayfada zaten render edilen) 'error' state'ine yazılıyor.
+    setError(null);
+    try {
+      await api.delete(`${endpoint}/${id}`);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Silinemedi.');
+    }
   }
 
   return { items, isLoading, error, create, update, remove, refresh };
