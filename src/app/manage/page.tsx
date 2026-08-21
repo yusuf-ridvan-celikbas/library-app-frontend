@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { TopBar } from '@/components/top-bar';
+import { BottomNav } from '@/components/bottom-nav';
 
 const CATEGORIES = [
   { href: '/manage/authors', label: 'Yazarlar', desc: 'Yazar bilgilerini düzenle, sil' },
@@ -10,15 +12,8 @@ const CATEGORIES = [
 
 export default function ManageHubPage() {
   return (
-    <main className="min-h-screen bg-paper">
-      <header className="border-b border-oak/10 bg-paper-elevated px-4 py-4">
-        <div className="mx-auto flex max-w-md items-center justify-between">
-          <p className="call-number text-xs text-oak/60">RAF YÖNETİMİ</p>
-          <Link href="/books" className="text-sm text-ink/60 underline underline-offset-2">
-            ← Rafa dön
-          </Link>
-        </div>
-      </header>
+    <main className="min-h-screen bg-paper pb-24">
+      <TopBar title="Kütüphanem" subtitle="Yönet" />
 
       <div className="mx-auto max-w-md space-y-3 px-4 py-6">
         {CATEGORIES.map((cat) => (
@@ -35,6 +30,8 @@ export default function ManageHubPage() {
           </Link>
         ))}
       </div>
+
+      <BottomNav />
     </main>
   );
 }

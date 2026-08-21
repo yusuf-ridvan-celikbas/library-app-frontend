@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api-client';
 import { GoalBookList } from '@/components/goal-book-list';
+import { TopBar } from '@/components/top-bar';
+import { BottomNav } from '@/components/bottom-nav';
 import type { ApiArrayResponse, GoalPeriod, ReadingGoal } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,15 +44,8 @@ export default function GoalsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper pb-16">
-      <header className="border-b border-oak/10 bg-paper-elevated px-4 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <p className="call-number text-xs text-oak/60">HEDEFLERİM</p>
-          <Link href="/books" className="text-sm text-ink/60 underline underline-offset-2">
-            ← Rafa dön
-          </Link>
-        </div>
-      </header>
+    <main className="min-h-screen bg-paper pb-24">
+      <TopBar title="Kütüphanem" subtitle="Hedeflerim" />
 
       <div className="mx-auto max-w-2xl px-4 py-6">
         <Button onClick={() => setIsAdding((v) => !v)} className="mb-4 w-full bg-oak hover:bg-oak/90">
@@ -130,6 +125,8 @@ export default function GoalsPage() {
           </ul>
         )}
       </div>
+
+      <BottomNav />
     </main>
   );
 }

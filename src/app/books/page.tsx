@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { api, ApiError } from '@/lib/api-client';
+import { TopBar } from '@/components/top-bar';
+import { BottomNav } from '@/components/bottom-nav';
 import type { Book, PaginatedResponse } from '@/types/api';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 const STATUS_STYLES: Record<Book['status'], string> = {
   available: 'bg-moss/15 text-moss',
@@ -18,7 +20,7 @@ const STATUS_STYLES: Record<Book['status'], string> = {
 };
 
 export default function BooksPage() {
-  const { user, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -26,7 +28,6 @@ export default function BooksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Korumalı sayfa: oturum doğrulaması bitip kullanıcı yoksa login'e at.
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace('/login');
@@ -50,7 +51,7 @@ export default function BooksPage() {
           if (err instanceof ApiError) setError(err.message);
         })
         .finally(() => setIsLoading(false));
-    }, 250); // arama kutusunda her tuşta değil, kısa bir gecikmeyle sorgula
+    }, 250);
 
     return () => {
       clearTimeout(timeout);
@@ -63,55 +64,10 @@ export default function BooksPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper">
-      <header className="border-b border-oak/10 bg-paper-elevated">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="call-number text-xs text-oak/60">KÜTÜPHANEM</p>
-            <h1 className="font-display text-2xl font-medium text-ink">Rafım</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Not: Button'ın asChild prop'u bu shadcn sürümünde
-                desteklenmiyor; navigasyon linkleri için doğrudan
-                stillendirilmiş <Link> kullanıyoruz. */}
-            <Link
-              href="/books/scan"
-              className="inline-flex h-9 items-center justify-center rounded-md bg-oak px-4 text-sm font-medium text-paper transition-colors hover:bg-oak/90"
-            >
-              + Kitap ekle
-            </Link>
-            <Link
-              href="/goals"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
-            >
-              Hedeflerim
-            </Link>
-            <Link
-              href="/reading"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
-            >
-              Okuma Geçmişim
-            </Link>
-            <Link
-              href="/loans"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
-            >
-              Emanetler
-            </Link>
-            <Link
-              href="/manage"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
-            >
-              Yönet
-            </Link>
-            <Button variant="ghost" onClick={() => logout()} className="text-ink/60 hover:text-ink">
-              Çıkış yap
-            </Button>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen bg-paper pb-24">
+      <TopBar title="Kütüphanem" subtitle="Rafım" />
 
-      <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className="mx-auto max-w-2xl px-4 py-6">
         <Input
           placeholder="Kitap ara… (başlık)"
           value={search}
@@ -134,7 +90,6 @@ export default function BooksPage() {
           <ul className="mt-6 space-y-3">
             {books.map((book) => (
               <li key={book.id} className="flex overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
-                {/* Kitap sırtı şeridi — imza tasarım ögesi */}
                 <div className="w-1.5 shrink-0 bg-spine" />
                 <Link
                   href={`/books/${book.id}`}
@@ -162,6 +117,17 @@ export default function BooksPage() {
           </ul>
         )}
       </div>
+
+      {/* Kayan ekleme butonu (FAB) — alt nav'ın hemen üzerinde, sağ altta */}
+      <Link
+        href="/books/scan"
+        aria-label="Kitap ekle"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-oak text-paper shadow-lg transition-transform hover:scale-105"
+      >
+        <Plus className="h-6 w-6" strokeWidth={2} />
+      </Link>
+
+      <BottomNav />
     </main>
   );
 }

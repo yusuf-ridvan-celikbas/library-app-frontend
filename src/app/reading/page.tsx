@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api-client';
+import { TopBar } from '@/components/top-bar';
+import { BottomNav } from '@/components/bottom-nav';
 import type { PaginatedResponse, ReadingSession, ReadingStatus } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,19 +67,13 @@ export default function ReadingHistoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper pb-16">
-      <header className="border-b border-oak/10 bg-paper-elevated px-4 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <p className="call-number text-xs text-oak/60">OKUMA GEÇMİŞİM</p>
-          <Link href="/books" className="text-sm text-ink/60 underline underline-offset-2">
-            ← Rafa dön
-          </Link>
-        </div>
-      </header>
+    <main className="min-h-screen bg-paper pb-24">
+      <TopBar title="Kütüphanem" subtitle="Okuma Geçmişim" />
 
       <div className="mx-auto max-w-2xl px-4 py-6">
-        <div className="mb-4 flex flex-wrap gap-1 overflow-hidden rounded-md border border-oak/20">
-          <button
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex flex-wrap gap-1 overflow-hidden rounded-md border border-oak/20">
+            <button
             onClick={() => setFilter('all')}
             className={`px-3 py-1.5 text-sm font-medium transition-colors ${
               filter === 'all' ? 'bg-oak text-paper' : 'bg-paper-elevated text-ink/60'
@@ -96,6 +92,13 @@ export default function ReadingHistoryPage() {
               {s.label}
             </button>
           ))}
+          </div>
+          <Link
+            href="/reading/stats"
+            className="text-xs text-brass underline underline-offset-2"
+          >
+            İstatistikler
+          </Link>
         </div>
 
         {isLoading ? (
@@ -170,6 +173,8 @@ export default function ReadingHistoryPage() {
           </ul>
         )}
       </div>
+
+      <BottomNav />
     </main>
   );
 }
