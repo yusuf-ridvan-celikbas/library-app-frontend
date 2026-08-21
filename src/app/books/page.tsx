@@ -81,6 +81,12 @@ export default function BooksPage() {
               + Kitap ekle
             </Link>
             <Link
+              href="/goals"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
+            >
+              Hedeflerim
+            </Link>
+            <Link
               href="/reading"
               className="inline-flex h-9 items-center justify-center rounded-md border border-oak/20 px-4 text-sm font-medium text-ink transition-colors hover:bg-oak/5"
             >

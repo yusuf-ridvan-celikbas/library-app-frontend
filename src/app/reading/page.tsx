@@ -30,7 +30,7 @@ function computeMetrics(session: ReadingSession): { days: number; pagesPerDay: n
   const end = new Date(session.finished_at);
   const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
-  const pagesPerDay = session.book.page_count ? Math.round(session.book.page_count / days) : null;
+  const pagesPerDay = session.book?.page_count ? Math.round(session.book.page_count / days) : null;
 
   return { days, pagesPerDay };
 }
@@ -120,12 +120,16 @@ export default function ReadingHistoryPage() {
                 <li key={session.id} className="rounded-sm border border-oak/10 bg-paper-elevated px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <Link
-                        href={`/books/${session.book.id}`}
-                        className="font-medium text-ink underline underline-offset-2"
-                      >
-                        {session.book.title}
-                      </Link>
+                      {session.book ? (
+                        <Link
+                          href={`/books/${session.book.id}`}
+                          className="font-medium text-ink underline underline-offset-2"
+                        >
+                          {session.book.title}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-ink/50">Silinmiş kitap</span>
+                      )}
                       <p className="text-sm text-ink/60">
                         {session.status_label}
                         {session.rating && <span className="text-brass"> · {'★'.repeat(session.rating)}</span>}
@@ -191,7 +195,7 @@ function EditSessionForm({
     setError(null);
     try {
       await api.put(`/reading-sessions/${session.id}`, {
-        book_id: session.book.id,
+        book_id: session.book?.id, // undefined olursa backend mevcut book_id'yi korur
         status,
         started_at: startedAt || null,
         finished_at: finishedAt || null,
@@ -207,7 +211,7 @@ function EditSessionForm({
 
   return (
     <div className="space-y-3">
-      <p className="font-medium text-ink">{session.book.title}</p>
+      <p className="font-medium text-ink">{session.book?.title ?? 'Silinmiş kitap'}</p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label>Durum</Label>

@@ -87,8 +87,8 @@ export interface Loan {
   returned_at: string | null;
   is_overdue: boolean;
   notes: string | null;
-  book: Pick<Book, 'id' | 'title'>;
-  borrower: Pick<Borrower, 'id' | 'name'> | null;
+  book: Pick<Book, 'id' | 'title'> | null;
+  borrower: Pick<Borrower, 'id' | 'name'>;
   created_at: string;
 }
 
@@ -100,7 +100,7 @@ export interface ReadingSession {
   finished_at: string | null;
   rating: number | null;
   notes: string | null;
-  book: Pick<Book, 'id' | 'title' | 'page_count'>;
+  book: Pick<Book, 'id' | 'title' | 'page_count'> | null;
   created_at: string;
 }
 
@@ -146,4 +146,27 @@ export interface ApiErrorResponse {
   error_code?: string;
   context?: Record<string, unknown> | null;
   errors?: Record<string, string[]>; // sadece VALIDATION_FAILED'da dolu
+}
+
+export type GoalPeriod = 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * Backend'in ReadingGoalResource'u — ilerleme/tempo alanları (completed_books,
+ * suggested_daily_pages vb.) DB'de saklanmaz, her istekte
+ * ReadingGoalProgressCalculator tarafından hesaplanır.
+ */
+export interface ReadingGoal {
+  id: string;
+  period_type: GoalPeriod;
+  period_type_label: string;
+  period_start: string;
+  period_end: string;
+  target_books: number;
+  completed_books: number;
+  remaining_books: number;
+  percent_complete: number;
+  days_remaining: number;
+  suggested_daily_pages: number;
+  is_on_track: boolean;
+  created_at: string;
 }
