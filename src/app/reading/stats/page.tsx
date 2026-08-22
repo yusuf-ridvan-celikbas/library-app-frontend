@@ -29,11 +29,12 @@ interface ReadingStats {
     fastest_book: BookPace | null;
     slowest_book: BookPace | null;
   };
-  monthly_breakdown: { month: string; books_finished: number }[];
+  monthly_breakdown: { month: string; books_finished: number; pages_read: number; average_daily_pages: number }[];
 }
 
 export default function ReadingStatsPage() {
   const [stats, setStats] = useState<ReadingStats | null>(null);
+  const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [year, setYear] = useState<number | null>(null); // null = henüz seçilmedi, backend varsayılanı (bu yıl) kullanılır
 
@@ -158,14 +159,28 @@ export default function ReadingStatsPage() {
                 <div className="space-y-2">
                   {(() => {
                     const max = Math.max(...stats.monthly_breakdown.map((m) => m.books_finished), 1);
-                    return stats.monthly_breakdown.map((m) => (
+                    return stats.monthly_breakdown.map((m, index) => (
                       <div key={m.month} className="flex items-center gap-3">
                         <span className="w-14 shrink-0 text-xs text-ink/60">{m.month}</span>
-                        <div className="h-4 flex-1 overflow-hidden rounded-full bg-oak/5">
+                        <div
+                          className="relative h-4 flex-1 overflow-visible rounded-full bg-oak/5"
+                          onMouseEnter={() => setHoveredMonth(index)}
+                          onMouseLeave={() => setHoveredMonth(null)}
+                        >
                           <div
-                            className="h-full rounded-full bg-brass"
+                            className="h-full cursor-default rounded-full bg-brass"
                             style={{ width: `${(m.books_finished / max) * 100}%` }}
                           />
+                          {hoveredMonth === index && (
+                            <div className="absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-md bg-ink px-2.5 py-1.5 text-xs text-paper shadow-lg">
+                              <p className="font-medium">{m.pages_read.toLocaleString('tr-TR')} sayfa</p>
+                              <p className="text-paper/70">
+                                günde ~{m.average_daily_pages} sayfa ortalama
+                              </p>
+                              {/* küçük ok işareti */}
+                              <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-ink" />
+                            </div>
+                          )}
                         </div>
                         <span className="w-4 shrink-0 text-right text-xs text-ink/60">{m.books_finished}</span>
                       </div>
