@@ -11,7 +11,7 @@ const TABS = [
   { href: '/loans', label: 'Emanet', icon: Users, matchPrefixes: ['/loans'] },
   // 'Daha Fazla' altındaki hub sayfalarında da (Yönet, Hediyeler) bu
   // sekmenin aktif görünmesi için ek yol önekleri.
-  { href: '/more', label: 'Daha Fazla', icon: Menu, matchPrefixes: ['/more', '/manage', '/gifts'] },
+  { href: '/more', label: 'Daha Fazla', icon: Menu, matchPrefixes: ['/more', '/manage', '/gifts', '/borrowed-books'] },
 ];
 
 /**

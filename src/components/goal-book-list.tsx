@@ -1,22 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api-client';
-import { SearchableMultiSelect } from '@/components/searchable-select';
-import type { ApiItemResponse, Book, PaginatedResponse, ReadingGoal } from '@/types/api';
+import { api, ApiError } from '@/lib/api-client';
+import { SearchableSingleSelect } from '@/components/searchable-select';
+import type { ApiArrayResponse, ApiItemResponse, Book, PaginatedResponse, ReadingGoal } from '@/types/api';
+import { Button } from '@/components/ui/button';
+
+interface BorrowedBookLite {
+  id: string;
+  title: string;
+}
 
 /**
- * Faz 3b: bir hedefe belirli kitaplar iliştirme. Liste boşken hedef
- * "sayım modunda" (Faz 3) çalışmaya devam eder — bu bileşen kullanılmasa
- * bile mevcut hedefler bozulmaz.
+ * Faz 3b + ödünç kitap desteği: bir hedefe belirli kitaplar/ödünç
+ * kitaplar iliştirme. Liste boşken hedef "sayım modunda" çalışmaya
+ * devam eder — bu bileşen kullanılmasa bile mevcut hedefler bozulmaz.
  *
- * ÖNEMLİ UX düzeltmesi: bir hedefe kitap eklemek, o hedefin ilerleme
- * hesaplama şeklini "sayım modundan" "liste moduna" çevirir — bu andan
- * itibaren SADECE listedeki kitaplar sayılır. Bu, sayım modunda zaten
- * var olan ilerlemenin (örn. "10/27") görünürde düşmesine yol açabilir
- * (veri KAYBOLMAZ, sadece hangi kitapların sayılacağı değişir). Bu
- * yüzden, sayım modunda zaten ilerleme varken listeye İLK kitap
- * eklenirken kullanıcıyı özellikle uyarıyoruz.
+ * İki ayrı seçici var (Kitap / Ödünç Kitap) çünkü bunlar backend'de
+ * farklı endpoint'lere gidiyor (attachBook vs attachBorrowedBook) —
+ * tek bir birleşik seçiciye zorlamak, kullanıcının "hangi kaynaktan
+ * ekliyorum" niyetini gizler.
  */
 export function GoalBookList({
   goal,
@@ -27,45 +30,73 @@ export function GoalBookList({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
+  const [borrowedBooks, setBorrowedBooks] = useState<BorrowedBookLite[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState('');
+  const [selectedBorrowedId, setSelectedBorrowedId] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && books.length === 0) {
       api.get<PaginatedResponse<Book>>('/books?per_page=100').then((res) => setBooks(res.data));
     }
-  }, [isOpen, books.length]);
-
-  const bookOptions = books.map((b) => ({ id: b.id, name: b.title }));
-  const selectedIds = goal.books.map((b) => b.id);
-
-  async function handleToggle(bookId: string) {
-    const isCurrentlySelected = selectedIds.includes(bookId);
-
-    // Mod-değişikliği uyarısı: sadece İLK kitap eklenirken VE hedefin
-    // sayım modunda zaten tamamlanmış kitabı varken gösterilir.
-    if (!isCurrentlySelected && goal.books.length === 0 && goal.completed_books > 0) {
-      const confirmed = window.confirm(
-        `Bu hedefte şu anda ${goal.completed_books} kitaplık bir ilerlemeniz var (sayım moduna göre hesaplanmış).\n\n` +
-          'Bir kitap listesi eklerseniz, ilerleme artık SADECE bu listedeki kitaplara göre hesaplanacak. ' +
-          'Önceden okuduğunuz kitaplar listede yoksa, ilerleme çubuğu düşük görünecek — ama okuma geçmişiniz KAYBOLMAZ, ' +
-          'sadece bu hedefin sayma şekli değişir.\n\nDevam etmek istiyor musunuz?',
-      );
-      if (!confirmed) return;
+    if (isOpen && borrowedBooks.length === 0) {
+      api.get<ApiArrayResponse<BorrowedBookLite>>('/borrowed-books?status=all').then((res) => setBorrowedBooks(res.data));
     }
+  }, [isOpen, books.length, borrowedBooks.length]);
 
+  const attachedBookIds = goal.books.filter((b) => b.source === 'book').map((b) => b.target_id);
+  const attachedBorrowedIds = goal.books.filter((b) => b.source === 'borrowed').map((b) => b.target_id);
+
+  const bookOptions = books.filter((b) => !attachedBookIds.includes(b.id)).map((b) => ({ id: b.id, name: b.title }));
+  const borrowedOptions = borrowedBooks
+    .filter((b) => !attachedBorrowedIds.includes(b.id))
+    .map((b) => ({ id: b.id, name: b.title }));
+
+  async function handleAddBook() {
+    if (!selectedBookId) return;
+    setIsSaving(true);
     setError(null);
     try {
-      if (isCurrentlySelected) {
-        const res = await api.delete<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books/${bookId}`);
-        onChanged(res.data);
-      } else {
-        const res = await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books`, {
-          book_id: bookId,
-        });
-        onChanged(res.data);
-      }
+      const res = await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books`, {
+        book_id: selectedBookId,
+      });
+      onChanged(res.data);
+      setSelectedBookId('');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Eklenemedi.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleAddBorrowed() {
+    if (!selectedBorrowedId) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const res = await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/borrowed-books`, {
+        borrowed_book_id: selectedBorrowedId,
+      });
+      onChanged(res.data);
+      setSelectedBorrowedId('');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Eklenemedi.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleRemove(source: 'book' | 'borrowed', targetId: string) {
+    try {
+      const path =
+        source === 'book'
+          ? `/reading-goals/${goal.id}/books/${targetId}`
+          : `/reading-goals/${goal.id}/borrowed-books/${targetId}`;
+      const res = await api.delete<ApiItemResponse<ReadingGoal>>(path);
+      onChanged(res.data);
     } catch {
-      setError('İşlem başarısız oldu.');
+      // sessizce yut
     }
   }
 
@@ -88,13 +119,18 @@ export function GoalBookList({
           ) : (
             <ul className="space-y-1">
               {goal.books.map((b) => (
-                <li key={b.id} className="flex items-center justify-between text-sm">
+                <li key={b.item_id} className="flex items-center justify-between text-sm">
                   <span className={b.is_finished ? 'text-moss' : 'text-ink/70'}>
                     {b.is_finished ? '✓ ' : ''}
                     {b.title}
+                    {b.source === 'borrowed' && (
+                      <span className="ml-1.5 rounded-full bg-oak/10 px-1.5 py-0.5 text-[10px] font-medium text-oak">
+                        Ödünç
+                      </span>
+                    )}
                   </span>
                   <button
-                    onClick={() => handleToggle(b.id)}
+                    onClick={() => handleRemove(b.source, b.target_id)}
                     className="text-xs text-spine underline underline-offset-2"
                   >
                     Çıkar
@@ -104,15 +140,44 @@ export function GoalBookList({
             </ul>
           )}
 
-          {/* SearchableMultiSelect: pencere kapanmadan birden fazla kitap
-              art arda seçilip listeye eklenebilir/çıkarılabilir — her
-              tıklama anında attach/detach isteği tetikler. */}
-          <SearchableMultiSelect
-            label="Kitap ekle/çıkar"
-            items={bookOptions}
-            selectedIds={selectedIds}
-            onToggle={handleToggle}
-          />
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <SearchableSingleSelect
+                label="Kendi kitaplığından ekle"
+                items={bookOptions}
+                selectedId={selectedBookId}
+                onChange={setSelectedBookId}
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={handleAddBook}
+              disabled={!selectedBookId || isSaving}
+              className="bg-oak hover:bg-oak/90"
+            >
+              Ekle
+            </Button>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <SearchableSingleSelect
+                label="Ödünç aldıklarından ekle"
+                items={borrowedOptions}
+                selectedId={selectedBorrowedId}
+                onChange={setSelectedBorrowedId}
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={handleAddBorrowed}
+              disabled={!selectedBorrowedId || isSaving}
+              variant="outline"
+            >
+              Ekle
+            </Button>
+          </div>
+
           {error && <p className="text-xs text-spine">{error}</p>}
         </div>
       )}
