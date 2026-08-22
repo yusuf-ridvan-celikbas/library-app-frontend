@@ -21,6 +21,15 @@ const STATUS_STYLES: Record<Book['status'], string> = {
   gifted: 'bg-oak/10 text-oak',
 };
 
+const STATUS_FILTER_OPTIONS: { value: Book['status']; label: string }[] = [
+  { value: 'available', label: 'Müsait' },
+  { value: 'reading', label: 'Okunuyor' },
+  { value: 'loaned', label: 'Ödünçte' },
+  { value: 'lost', label: 'Kayıp' },
+  { value: 'archived', label: 'Arşivlendi' },
+  { value: 'gifted', label: 'Hediye Edildi' },
+];
+
 // Bir sayfada yeterince büyük bir grup çekip "Daha fazla yükle" ile
 // devamını getiriyoruz — kişisel bir kütüphane için makul bir denge
 // (tek seferde binlerce kaydı çekmek yerine).
@@ -34,6 +43,7 @@ export default function BooksPage() {
   const [search, setSearch] = useState('');
   const [publisherId, setPublisherId] = useState('');
   const [authorId, setAuthorId] = useState('');
+  const [status, setStatus] = useState('');
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [page, setPage] = useState(1);
@@ -66,6 +76,7 @@ export default function BooksPage() {
       if (search.trim()) params.set('search', search.trim());
       if (publisherId) params.set('publisher_id', publisherId);
       if (authorId) params.set('author_id', authorId);
+      if (status) params.set('status', status);
 
       api
         .get<PaginatedResponse<Book>>(`/books?${params.toString()}`, { signal: controller.signal })
@@ -86,7 +97,7 @@ export default function BooksPage() {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, publisherId, authorId, user]);
+  }, [search, publisherId, authorId, status, user]);
 
   function loadMore() {
     const nextPage = page + 1;
@@ -95,6 +106,7 @@ export default function BooksPage() {
     if (search.trim()) params.set('search', search.trim());
     if (publisherId) params.set('publisher_id', publisherId);
     if (authorId) params.set('author_id', authorId);
+    if (status) params.set('status', status);
 
     api
       .get<PaginatedResponse<Book>>(`/books?${params.toString()}`)
@@ -122,11 +134,23 @@ export default function BooksPage() {
           className="bg-paper-elevated"
         />
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="rounded-md border border-oak/20 bg-paper-elevated px-2 py-2 text-xs text-ink outline-none focus:border-brass"
+          >
+            <option value="">Tüm Durumlar</option>
+            {STATUS_FILTER_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
           <select
             value={publisherId}
             onChange={(e) => setPublisherId(e.target.value)}
-            className="rounded-md border border-oak/20 bg-paper-elevated px-3 py-2 text-sm text-ink outline-none focus:border-brass"
+            className="rounded-md border border-oak/20 bg-paper-elevated px-2 py-2 text-xs text-ink outline-none focus:border-brass"
           >
             <option value="">Tüm Yayınevleri</option>
             {publishers.map((p) => (
@@ -138,7 +162,7 @@ export default function BooksPage() {
           <select
             value={authorId}
             onChange={(e) => setAuthorId(e.target.value)}
-            className="rounded-md border border-oak/20 bg-paper-elevated px-3 py-2 text-sm text-ink outline-none focus:border-brass"
+            className="rounded-md border border-oak/20 bg-paper-elevated px-2 py-2 text-xs text-ink outline-none focus:border-brass"
           >
             <option value="">Tüm Yazarlar</option>
             {authors.map((a) => (
@@ -157,7 +181,7 @@ export default function BooksPage() {
           <div className="mt-16 text-center">
             <p className="font-display text-xl text-ink/60">Raf boş görünüyor.</p>
             <p className="mt-1 text-sm text-ink/40">
-              {search || publisherId || authorId ? 'Bu filtrelere uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
+              {search || publisherId || authorId || status ? 'Bu filtrelere uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
             </p>
           </div>
         ) : (
