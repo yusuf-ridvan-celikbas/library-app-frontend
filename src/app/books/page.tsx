@@ -10,6 +10,7 @@ import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
 import type { Book, PaginatedResponse } from '@/types/api';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const STATUS_STYLES: Record<Book['status'], string> = {
   available: 'bg-moss/15 text-moss',
@@ -17,7 +18,13 @@ const STATUS_STYLES: Record<Book['status'], string> = {
   loaned: 'bg-spine/15 text-spine',
   lost: 'bg-ink/10 text-ink/60',
   archived: 'bg-ink/5 text-ink/40',
+  gifted: 'bg-oak/10 text-oak',
 };
+
+// Bir sayfada yeterince büyük bir grup çekip "Daha fazla yükle" ile
+// devamını getiriyoruz — kişisel bir kütüphane için makul bir denge
+// (tek seferde binlerce kaydı çekmek yerine).
+const PER_PAGE = 60;
 
 export default function BooksPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -25,7 +32,10 @@ export default function BooksPage() {
 
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,18 +44,23 @@ export default function BooksPage() {
     }
   }, [authLoading, user, router]);
 
+  // Arama değiştiğinde sayfa 1'den yeniden başla.
   useEffect(() => {
     if (!user) return;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       setIsLoading(true);
-      const query = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+      const params = new URLSearchParams({ per_page: String(PER_PAGE), page: '1' });
+      if (search.trim()) params.set('search', search.trim());
+
       api
-        .get<PaginatedResponse<Book>>(`/books${query}`, { signal: controller.signal })
+        .get<PaginatedResponse<Book>>(`/books?${params.toString()}`, { signal: controller.signal })
         .then((res) => {
           setError(null);
           setBooks(res.data);
+          setPage(res.meta.current_page);
+          setLastPage(res.meta.last_page);
         })
         .catch((err) => {
           if (err instanceof ApiError) setError(err.message);
@@ -57,7 +72,24 @@ export default function BooksPage() {
       clearTimeout(timeout);
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, user]);
+
+  function loadMore() {
+    const nextPage = page + 1;
+    setIsLoadingMore(true);
+    const params = new URLSearchParams({ per_page: String(PER_PAGE), page: String(nextPage) });
+    if (search.trim()) params.set('search', search.trim());
+
+    api
+      .get<PaginatedResponse<Book>>(`/books?${params.toString()}`)
+      .then((res) => {
+        setBooks((prev) => [...prev, ...res.data]);
+        setPage(res.meta.current_page);
+        setLastPage(res.meta.last_page);
+      })
+      .finally(() => setIsLoadingMore(false));
+  }
 
   if (authLoading || !user) {
     return <div className="flex min-h-screen items-center justify-center bg-paper text-ink/50">Yükleniyor…</div>;
@@ -67,7 +99,7 @@ export default function BooksPage() {
     <main className="min-h-screen bg-paper pb-24">
       <TopBar title="Kütüphanem" subtitle="Rafım" />
 
-      <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-3xl px-4 py-6">
         <Input
           placeholder="Kitap ara… (başlık)"
           value={search}
@@ -87,34 +119,44 @@ export default function BooksPage() {
             </p>
           </div>
         ) : (
-          <ul className="mt-6 space-y-3">
-            {books.map((book) => (
-              <li key={book.id} className="flex overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
-                <div className="w-1.5 shrink-0 bg-spine" />
-                <Link
-                  href={`/books/${book.id}`}
-                  className="flex flex-1 items-start justify-between gap-4 px-4 py-3 transition-colors hover:bg-oak/5"
+          <>
+            {/* 3 sütunlu ızgara — kitap sayısı arttıkça aşağı doğru
+                büyür, sayfa normal şekilde kayar (yapay bir yükseklik
+                sınırı yok). */}
+            <ul className="mt-6 grid grid-cols-3 gap-2">
+              {books.map((book) => (
+                <li key={book.id} className="overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
+                  <Link href={`/books/${book.id}`} className="block transition-colors hover:bg-oak/5">
+                    <div className="h-1.5 bg-spine" />
+                    <div className="p-2.5">
+                      <p className="line-clamp-2 font-display text-sm leading-snug text-ink">{book.title}</p>
+                      {book.authors.length > 0 && (
+                        <p className="mt-1 truncate text-xs text-ink/50">{book.authors[0].name}</p>
+                      )}
+                      <span
+                        className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[book.status]}`}
+                      >
+                        {book.status_label}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {page < lastPage && (
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                  className="border-oak/20"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-display text-lg text-ink">{book.title}</p>
-                    {book.authors.length > 0 && (
-                      <p className="truncate text-sm text-ink/60">
-                        {book.authors.map((a) => a.name).join(', ')}
-                      </p>
-                    )}
-                    {book.location && (
-                      <p className="call-number mt-1 text-xs text-brass">{book.location.display_name}</p>
-                    )}
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[book.status]}`}
-                  >
-                    {book.status_label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  {isLoadingMore ? 'Yükleniyor…' : 'Daha fazla yükle'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

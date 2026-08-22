@@ -6,7 +6,7 @@
  * codegen kurmak fazla mühendislik olurdu).
  */
 
-export type BookStatus = 'available' | 'reading' | 'loaned' | 'lost' | 'archived';
+export type BookStatus = 'available' | 'reading' | 'loaned' | 'lost' | 'archived' | 'gifted';
 export type LoanStatus = 'active' | 'returned' | 'overdue' | 'lost';
 export type ReadingStatus = 'planned' | 'in_progress' | 'finished' | 'abandoned';
 
@@ -74,6 +74,12 @@ export interface Book {
   location: Pick<Location, 'id' | 'display_name'> | null;
   authors: Pick<Author, 'id' | 'name'>[];
   tags: Tag[];
+  gift: {
+    id: string;
+    borrower: Pick<Borrower, 'id' | 'name'>;
+    gifted_at: string;
+    notes: string | null;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,19 +156,10 @@ export interface ApiErrorResponse {
 
 export type GoalPeriod = 'weekly' | 'monthly' | 'yearly';
 
-export interface GoalBook {
-  id: string;
-  title: string;
-  page_count: number | null;
-  is_finished: boolean;
-}
-
 /**
  * Backend'in ReadingGoalResource'u — ilerleme/tempo alanları (completed_books,
  * suggested_daily_pages vb.) DB'de saklanmaz, her istekte
- * ReadingGoalProgressCalculator tarafından hesaplanır. 'books' doluysa
- * (Faz 3b) hedef "liste modunda" çalışır — target_books de listedeki
- * kitap sayısına eşitlenir.
+ * ReadingGoalProgressCalculator tarafından hesaplanır.
  */
 export interface ReadingGoal {
   id: string;
@@ -177,6 +174,5 @@ export interface ReadingGoal {
   days_remaining: number;
   suggested_daily_pages: number;
   is_on_track: boolean;
-  books: GoalBook[];
   created_at: string;
 }

@@ -8,6 +8,7 @@ import { useReferenceLists } from '@/lib/reference-data';
 import { SearchableMultiSelect, SearchableSingleSelect, LocationCombobox } from '@/components/searchable-select';
 import { LoanSection } from '@/components/loan-section';
 import { ReadingSection } from '@/components/reading-section';
+import { GiftSection } from '@/components/gift-section';
 import type { ApiItemResponse, Book, BookStatus } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
   { value: 'loaned', label: 'Ödünçte' },
   { value: 'lost', label: 'Kayıp' },
   { value: 'archived', label: 'Arşivlendi' },
+  { value: 'gifted', label: 'Hediye Edildi' },
 ];
 
 /** Formun yönettiği tüm alanlar — her submit'te TAMAMI gönderilir (kısmi
@@ -292,6 +294,13 @@ export default function BookDetailPage() {
               setBook(res.data);
               setForm(bookToForm(res.data));
             });
+          }}
+        />
+        <GiftSection
+          book={book}
+          onChanged={(updated) => {
+            setBook(updated);
+            setForm(bookToForm(updated));
           }}
         />
         <ReadingSection bookId={book.id} />
