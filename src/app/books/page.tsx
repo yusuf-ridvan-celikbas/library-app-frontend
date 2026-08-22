@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { api, ApiError } from '@/lib/api-client';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
-import type { Author, Book, PaginatedResponse, Publisher } from '@/types/api';
+import type { ApiArrayResponse, Author, Book, PaginatedResponse, Publisher, Tag } from '@/types/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -46,8 +46,10 @@ export default function BooksPage() {
   const [publisherId, setPublisherId] = useState('');
   const [authorId, setAuthorId] = useState('');
   const [status, setStatus] = useState('');
+  const [tagId, setTagId] = useState('');
   const [publishers, setPublishers] = useState<Publisher[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,6 +67,7 @@ export default function BooksPage() {
     if (!user) return;
     api.get<PaginatedResponse<Publisher>>('/publishers?per_page=100').then((res) => setPublishers(res.data));
     api.get<PaginatedResponse<Author>>('/authors?per_page=100').then((res) => setAuthors(res.data));
+    api.get<ApiArrayResponse<Tag>>('/tags').then((res) => setTags(res.data));
   }, [user]);
 
   // Arama ya da filtreler değiştiğinde sayfa 1'den yeniden başla.
@@ -79,6 +82,7 @@ export default function BooksPage() {
       if (publisherId) params.set('publisher_id', publisherId);
       if (authorId) params.set('author_id', authorId);
       if (status) params.set('status', status);
+      if (tagId) params.set('tag_id', tagId);
 
       api
         .get<PaginatedResponse<Book>>(`/books?${params.toString()}`, { signal: controller.signal })
@@ -99,7 +103,7 @@ export default function BooksPage() {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, publisherId, authorId, status, user]);
+  }, [search, publisherId, authorId, status, tagId, user]);
 
   function loadMore() {
     const nextPage = page + 1;
@@ -109,6 +113,7 @@ export default function BooksPage() {
     if (publisherId) params.set('publisher_id', publisherId);
     if (authorId) params.set('author_id', authorId);
     if (status) params.set('status', status);
+    if (tagId) params.set('tag_id', tagId);
 
     api
       .get<PaginatedResponse<Book>>(`/books?${params.toString()}`)
@@ -136,7 +141,7 @@ export default function BooksPage() {
           className="bg-paper-elevated"
         />
 
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -146,6 +151,18 @@ export default function BooksPage() {
             {STATUS_FILTER_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={tagId}
+            onChange={(e) => setTagId(e.target.value)}
+            className="rounded-md border border-oak/20 bg-paper-elevated px-2 py-2 text-xs text-ink outline-none focus:border-brass"
+          >
+            <option value="">Tüm Etiketler</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
               </option>
             ))}
           </select>
@@ -183,7 +200,7 @@ export default function BooksPage() {
           <div className="mt-16 text-center">
             <p className="font-display text-xl text-ink/60">Raf boş görünüyor.</p>
             <p className="mt-1 text-sm text-ink/40">
-              {search || publisherId || authorId || status ? 'Bu filtrelere uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
+              {search || publisherId || authorId || status || tagId ? 'Bu filtrelere uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
             </p>
           </div>
         ) : (
