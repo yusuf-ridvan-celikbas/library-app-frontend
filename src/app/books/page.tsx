@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { api, ApiError } from '@/lib/api-client';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
-import type { Book, PaginatedResponse } from '@/types/api';
+import type { Author, Book, PaginatedResponse, Publisher } from '@/types/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -32,6 +32,10 @@ export default function BooksPage() {
 
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState('');
+  const [publisherId, setPublisherId] = useState('');
+  const [authorId, setAuthorId] = useState('');
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
+  const [authors, setAuthors] = useState<Author[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +48,14 @@ export default function BooksPage() {
     }
   }, [authLoading, user, router]);
 
-  // Arama değiştiğinde sayfa 1'den yeniden başla.
+  // Filtre seçicileri için referans listeleri — bir kez çekilir.
+  useEffect(() => {
+    if (!user) return;
+    api.get<PaginatedResponse<Publisher>>('/publishers?per_page=100').then((res) => setPublishers(res.data));
+    api.get<PaginatedResponse<Author>>('/authors?per_page=100').then((res) => setAuthors(res.data));
+  }, [user]);
+
+  // Arama ya da filtreler değiştiğinde sayfa 1'den yeniden başla.
   useEffect(() => {
     if (!user) return;
 
@@ -53,6 +64,8 @@ export default function BooksPage() {
       setIsLoading(true);
       const params = new URLSearchParams({ per_page: String(PER_PAGE), page: '1' });
       if (search.trim()) params.set('search', search.trim());
+      if (publisherId) params.set('publisher_id', publisherId);
+      if (authorId) params.set('author_id', authorId);
 
       api
         .get<PaginatedResponse<Book>>(`/books?${params.toString()}`, { signal: controller.signal })
@@ -73,13 +86,15 @@ export default function BooksPage() {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, user]);
+  }, [search, publisherId, authorId, user]);
 
   function loadMore() {
     const nextPage = page + 1;
     setIsLoadingMore(true);
     const params = new URLSearchParams({ per_page: String(PER_PAGE), page: String(nextPage) });
     if (search.trim()) params.set('search', search.trim());
+    if (publisherId) params.set('publisher_id', publisherId);
+    if (authorId) params.set('author_id', authorId);
 
     api
       .get<PaginatedResponse<Book>>(`/books?${params.toString()}`)
@@ -107,6 +122,33 @@ export default function BooksPage() {
           className="bg-paper-elevated"
         />
 
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <select
+            value={publisherId}
+            onChange={(e) => setPublisherId(e.target.value)}
+            className="rounded-md border border-oak/20 bg-paper-elevated px-3 py-2 text-sm text-ink outline-none focus:border-brass"
+          >
+            <option value="">Tüm Yayınevleri</option>
+            {publishers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={authorId}
+            onChange={(e) => setAuthorId(e.target.value)}
+            className="rounded-md border border-oak/20 bg-paper-elevated px-3 py-2 text-sm text-ink outline-none focus:border-brass"
+          >
+            <option value="">Tüm Yazarlar</option>
+            {authors.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {error && <p className="mt-4 text-sm text-spine">{error}</p>}
 
         {isLoading ? (
@@ -115,7 +157,7 @@ export default function BooksPage() {
           <div className="mt-16 text-center">
             <p className="font-display text-xl text-ink/60">Raf boş görünüyor.</p>
             <p className="mt-1 text-sm text-ink/40">
-              {search ? 'Bu aramaya uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
+              {search || publisherId || authorId ? 'Bu filtrelere uyan bir kitap yok.' : 'Henüz kitap eklenmemiş.'}
             </p>
           </div>
         ) : (
@@ -124,24 +166,55 @@ export default function BooksPage() {
                 büyür, sayfa normal şekilde kayar (yapay bir yükseklik
                 sınırı yok). */}
             <ul className="mt-6 grid grid-cols-3 gap-2">
-              {books.map((book) => (
-                <li key={book.id} className="overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
-                  <Link href={`/books/${book.id}`} className="block transition-colors hover:bg-oak/5">
-                    <div className="h-1.5 bg-spine" />
-                    <div className="p-2.5">
-                      <p className="line-clamp-2 font-display text-sm leading-snug text-ink">{book.title}</p>
-                      {book.authors.length > 0 && (
-                        <p className="mt-1 truncate text-xs text-ink/50">{book.authors[0].name}</p>
-                      )}
-                      <span
-                        className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[book.status]}`}
-                      >
-                        {book.status_label}
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
+              {books.map((book) => {
+                const firstTag = book.tags[0];
+                return (
+                  <li key={book.id} className="overflow-hidden rounded-sm border border-oak/10 bg-paper-elevated">
+                    <Link href={`/books/${book.id}`} className="block transition-colors hover:bg-oak/5">
+                      <div className="h-1.5 bg-spine" />
+                      <div className="p-2.5">
+                        {/* Üst satır: başlık solda, (varsa) etiket sağda — başlığın "karşısında" */}
+                        <div className="flex items-start justify-between gap-1">
+                          <p className="line-clamp-2 min-w-0 flex-1 font-display text-sm leading-snug text-ink">
+                            {book.title}
+                          </p>
+                          {firstTag && (
+                            <span
+                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium text-paper"
+                              style={{ backgroundColor: firstTag.color }}
+                            >
+                              {firstTag.name}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Yazar · Yayınevi birleşik satırı */}
+                        {(book.authors[0] || book.publisher) && (
+                          <p className="mt-1 truncate text-xs text-ink/50">
+                            {book.authors[0]?.name}
+                            {book.authors[0] && book.publisher && ' · '}
+                            {book.publisher?.name}
+                          </p>
+                        )}
+
+                        {/* Alt satır: durum solda, konum sağda */}
+                        <div className="mt-1.5 flex items-center justify-between gap-1">
+                          <span
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[book.status]}`}
+                          >
+                            {book.status_label}
+                          </span>
+                          {book.location && (
+                            <span className="call-number truncate text-[10px] text-brass">
+                              {book.location.display_name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
 
             {page < lastPage && (
