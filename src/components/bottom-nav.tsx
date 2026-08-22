@@ -2,26 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Target, History, Users, Settings } from 'lucide-react';
+import { BookOpen, Target, History, Users, Menu } from 'lucide-react';
 
 const TABS = [
-  { href: '/books', label: 'Rafım', icon: BookOpen },
-  { href: '/goals', label: 'Hedefler', icon: Target },
-  { href: '/reading', label: 'Okuma', icon: History },
-  { href: '/loans', label: 'Emanet', icon: Users },
-  { href: '/manage', label: 'Yönet', icon: Settings },
+  { href: '/books', label: 'Rafım', icon: BookOpen, matchPrefixes: ['/books'] },
+  { href: '/goals', label: 'Hedefler', icon: Target, matchPrefixes: ['/goals'] },
+  { href: '/reading', label: 'Okuma', icon: History, matchPrefixes: ['/reading'] },
+  { href: '/loans', label: 'Emanet', icon: Users, matchPrefixes: ['/loans'] },
+  // 'Daha Fazla' altındaki hub sayfalarında da (Yönet, Hediyeler) bu
+  // sekmenin aktif görünmesi için ek yol önekleri.
+  { href: '/more', label: 'Daha Fazla', icon: Menu, matchPrefixes: ['/more', '/manage', '/gifts'] },
 ];
 
 /**
- * Kalıcı alt navigasyon çubuğu — önceden her sayfanın kendi başlığında
- * dağınık şekilde tekrarlanan linkler (Kitap ekle, Hedeflerim, Okuma
- * Geçmişim, Emanetler, Yönet, Çıkış yap) yerine, mobil uygulama
- * deneyimine daha yakın, her zaman erişilebilir tek bir menü.
- *
- * Alt sayfalar (kitap detay, /manage/authors gibi) bu çubuğu KASITLI
- * OLARAK göstermez — onlar zaten kendi "← Geri" linkleriyle bir üst
- * seviyeye dönüyor, bottom nav'ı her derinlikte tekrar göstermek görsel
- * gürültü yaratırdı.
+ * Kalıcı alt navigasyon çubuğu. 'Yönet' artık kendi sekmesi değil —
+ * 'Daha Fazla' (/more) hub'ının içine taşındı (Hediyeler ve
+ * İstatistikler ile birlikte). Mobil bottom nav'da 5'ten fazla sekme
+ * kalabalık ve dokunması zor hale geldiği için, yeni eklenen sayfalar
+ * (Hediyeler, İstatistikler) doğrudan sekme olarak eklenmek yerine bu
+ * hub altında toplandı — bu desen, gelecekte yeni sayfalar eklenirken
+ * de bottom nav'ı 5 sekmede sabit tutmamızı sağlar.
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -30,8 +30,9 @@ export function BottomNav() {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-oak/10 bg-paper-elevated pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-2xl">
         {TABS.map((tab) => {
-          // /books/[id] gibi alt rotalarda da 'Rafım' sekmesi aktif görünsün.
-          const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const isActive = tab.matchPrefixes.some(
+            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+          );
           const Icon = tab.icon;
 
           return (

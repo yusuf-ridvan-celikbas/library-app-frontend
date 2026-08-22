@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { api } from '@/lib/api-client';
+import { TopBar } from '@/components/top-bar';
+import { BottomNav } from '@/components/bottom-nav';
 import type { ApiItemResponse } from '@/types/api';
 
 interface BookPace {
@@ -51,16 +52,8 @@ export default function ReadingStatsPage() {
   }, [year]);
 
   return (
-    <main className="min-h-screen bg-paper pb-16">
-      <header className="border-b border-oak/10 bg-paper-elevated px-4 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <p className="call-number text-xs text-oak/60">İSTATİSTİKLER</p>
-          <Link href="/reading" className="text-sm text-ink/60 underline underline-offset-2">
-            ← Geri
-          </Link>
-        </div>
-      </header>
-
+    <main className="min-h-screen bg-paper pb-24">
+      <TopBar title="Kütüphanem" subtitle="İstatistikler" />
       <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
         {isLoading || !stats ? (
           <p className="text-center text-sm text-ink/40">Yükleniyor…</p>
@@ -184,6 +177,8 @@ export default function ReadingStatsPage() {
           </>
         )}
       </div>
+
+      <BottomNav />
     </main>
   );
 }
