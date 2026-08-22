@@ -19,11 +19,13 @@ const STATUS_STYLES: Record<Book['status'], string> = {
   lost: 'bg-ink/10 text-ink/60',
   archived: 'bg-ink/5 text-ink/40',
   gifted: 'bg-oak/10 text-oak',
+  read: 'bg-moss/25 text-moss',
 };
 
 const STATUS_FILTER_OPTIONS: { value: Book['status']; label: string }[] = [
   { value: 'available', label: 'Müsait' },
   { value: 'reading', label: 'Okunuyor' },
+  { value: 'read', label: 'Okundu' },
   { value: 'loaned', label: 'Ödünçte' },
   { value: 'lost', label: 'Kayıp' },
   { value: 'archived', label: 'Arşivlendi' },

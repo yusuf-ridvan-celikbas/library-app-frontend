@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 const STATUS_OPTIONS: { value: ReadingStatus; label: string }[] = [
   { value: 'planned', label: 'Planlandı' },
   { value: 'in_progress', label: 'Okunuyor' },
-  { value: 'finished', label: 'Bitti' },
+  { value: 'finished', label: 'Okundu' },
   { value: 'abandoned', label: 'Yarım Bırakıldı' },
 ];
 
@@ -77,12 +77,6 @@ export function ReadingSection({ bookId }: { bookId: string }) {
     load();
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm('Bu okuma kaydı silinsin mi?')) return;
-    await api.delete(`/reading-sessions/${id}`);
-    load();
-  }
-
   return (
     <fieldset className="space-y-3 rounded-sm border border-oak/10 bg-paper-elevated px-6 py-5">
       <div className="flex items-center justify-between">
@@ -121,20 +115,12 @@ export function ReadingSection({ bookId }: { bookId: string }) {
                   {s.finished_at && <span className="text-ink/50"> → {s.finished_at}</span>}
                   {s.rating && <span className="text-brass"> · {'★'.repeat(s.rating)}</span>}
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setEditingId(s.id)}
-                    className="text-xs text-brass underline underline-offset-2"
-                  >
-                    Düzenle
-                  </button>
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    className="text-xs text-spine underline underline-offset-2"
-                  >
-                    Sil
-                  </button>
-                </div>
+                <button
+                  onClick={() => setEditingId(s.id)}
+                  className="text-xs text-brass underline underline-offset-2"
+                >
+                  Düzenle
+                </button>
               </li>
             ),
           )}

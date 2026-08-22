@@ -66,7 +66,7 @@ export default function ReadingStatsPage() {
           <p className="text-center text-sm text-ink/40">Yükleniyor…</p>
         ) : stats.total_books_finished === 0 ? (
           <p className="text-center text-sm text-ink/40">
-            Henüz &quot;Bitti&quot; olarak işaretlenmiş bir kitap yok.
+            Henüz &quot;Okundu&quot; olarak işaretlenmiş bir kitap yok.
           </p>
         ) : (
           <>

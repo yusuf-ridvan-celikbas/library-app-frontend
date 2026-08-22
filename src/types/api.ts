@@ -6,7 +6,7 @@
  * codegen kurmak fazla mühendislik olurdu).
  */
 
-export type BookStatus = 'available' | 'reading' | 'loaned' | 'lost' | 'archived' | 'gifted';
+export type BookStatus = 'available' | 'reading' | 'loaned' | 'lost' | 'archived' | 'gifted' | 'read';
 export type LoanStatus = 'active' | 'returned' | 'overdue' | 'lost';
 export type ReadingStatus = 'planned' | 'in_progress' | 'finished' | 'abandoned';
 

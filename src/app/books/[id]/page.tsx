@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 const STATUS_OPTIONS: { value: BookStatus; label: string }[] = [
   { value: 'available', label: 'Müsait' },
   { value: 'reading', label: 'Okunuyor' },
+  { value: 'read', label: 'Okundu' },
   { value: 'loaned', label: 'Ödünçte' },
   { value: 'lost', label: 'Kayıp' },
   { value: 'archived', label: 'Arşivlendi' },

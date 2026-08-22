@@ -15,7 +15,7 @@ type FilterStatus = ReadingStatus | 'all';
 const STATUS_OPTIONS: { value: ReadingStatus; label: string }[] = [
   { value: 'planned', label: 'Planlandı' },
   { value: 'in_progress', label: 'Okunuyor' },
-  { value: 'finished', label: 'Bitti' },
+  { value: 'finished', label: 'Okundu' },
   { value: 'abandoned', label: 'Yarım Bırakıldı' },
 ];
 
