@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { DataExportButton } from '@/components/data-export-button';
 
 const CATEGORIES = [
+  { href: '/reminders', label: 'Hatırlatıcılar', desc: 'Gecikmiş ve yaklaşan son tarihli kayıtlar' },
   { href: '/library-overview', label: 'Kütüphane Detayı', desc: 'Okunan/okunmayan, dağılımlar, okuma süresi hesaplayıcı' },
   { href: '/borrowed-books', label: 'Ödünç Aldıklarım', desc: 'Başkalarından ödünç aldığınız kitaplar' },
   { href: '/gifts', label: 'Hediyeler', desc: 'Hediye ettiğiniz kitapları görün' },
