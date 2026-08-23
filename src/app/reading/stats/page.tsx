@@ -16,6 +16,7 @@ interface ReadingStats {
   total_pages_read: number;
   total_minutes_read: number;
   pages_per_hour: number | null;
+  pages_per_minute: number | null;
   average_rating: number | null;
   selected_year: number;
   available_years: number[];
@@ -87,18 +88,20 @@ export default function ReadingStatsPage() {
               </div>
 
               {stats.total_minutes_read > 0 && (
-                <div className="mt-4 grid grid-cols-2 gap-3 border-t border-oak/10 pt-4 text-center">
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-oak/10 pt-4 text-center">
                   <div>
                     <p className="font-display text-xl text-ink">
                       {Math.floor(stats.total_minutes_read / 60)} sa {stats.total_minutes_read % 60} dk
                     </p>
-                    <p className="text-xs text-ink/50">toplam okuma süresi (kayıtlı oturumlar)</p>
+                    <p className="text-xs text-ink/50">toplam okuma süresi</p>
                   </div>
                   <div>
-                    <p className="font-display text-xl text-moss">
-                      {stats.pages_per_hour ?? '—'}
-                    </p>
-                    <p className="text-xs text-ink/50">sayfa/saat ortalama hız</p>
+                    <p className="font-display text-xl text-moss">{stats.pages_per_hour ?? '—'}</p>
+                    <p className="text-xs text-ink/50">sayfa/saat</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-xl text-moss">{stats.pages_per_minute ?? '—'}</p>
+                    <p className="text-xs text-ink/50">sayfa/dakika</p>
                   </div>
                 </div>
               )}

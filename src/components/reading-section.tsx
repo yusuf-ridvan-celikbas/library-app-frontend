@@ -138,6 +138,12 @@ export function ReadingSection({ bookId }: { bookId: string }) {
                     </button>
                   </div>
                 </div>
+                {s.pace && (
+                  <p className="call-number mt-1 text-xs text-brass">
+                    {s.pace.hours_to_read} saatte okundu · saatte {s.pace.pages_per_hour} sayfa · dakikada{' '}
+                    {s.pace.pages_per_minute} sayfa
+                  </p>
+                )}
                 <TimeLogList
                   endpoint={`/reading-sessions/${s.id}/time-logs`}
                   logs={s.time_logs ?? []}

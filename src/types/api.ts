@@ -107,6 +107,13 @@ export interface TimeLog {
   notes: string | null;
 }
 
+/** Sadece "Okundu" işaretlenmiş VE oturum süresi girilmiş kayıtlarda hesaplanır. */
+export interface ReadingPace {
+  hours_to_read: number;
+  pages_per_hour: number;
+  pages_per_minute: number;
+}
+
 export interface ReadingSession {
   id: string;
   status: ReadingStatus;
@@ -118,6 +125,7 @@ export interface ReadingSession {
   book: Pick<Book, 'id' | 'title' | 'page_count'> | null;
   total_minutes?: number;
   time_logs?: TimeLog[];
+  pace?: ReadingPace | null;
   created_at: string;
 }
 

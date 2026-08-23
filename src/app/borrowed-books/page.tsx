@@ -6,7 +6,7 @@ import { SearchableSingleSelect } from '@/components/searchable-select';
 import { TimeLogList } from '@/components/time-log-list';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
-import type { ApiArrayResponse, ApiItemResponse, Borrower, PaginatedResponse, TimeLog } from '@/types/api';
+import type { ApiArrayResponse, ApiItemResponse, Borrower, PaginatedResponse, ReadingPace, TimeLog } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,7 @@ interface BorrowedBook {
   reading_notes: string | null;
   total_minutes?: number;
   time_logs?: TimeLog[];
+  pace?: ReadingPace | null;
 }
 
 const READING_STATUS_OPTIONS: { value: BorrowedBook['reading_status']; label: string }[] = [
@@ -181,6 +182,12 @@ export default function BorrowedBooksPage() {
                       </button>
                     </div>
                   </div>
+                  {r.pace && (
+                    <p className="call-number mt-1 text-xs text-brass">
+                      {r.pace.hours_to_read} saatte okundu · saatte {r.pace.pages_per_hour} sayfa · dakikada{' '}
+                      {r.pace.pages_per_minute} sayfa
+                    </p>
+                  )}
                   {r.reading_status !== 'not_started' && (
                     <TimeLogList
                       endpoint={`/borrowed-books/${r.id}/time-logs`}
