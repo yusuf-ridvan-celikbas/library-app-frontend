@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api-client';
 import { SearchableSingleSelect } from '@/components/searchable-select';
+import { TimeLogList } from '@/components/time-log-list';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
-import type { ApiArrayResponse, ApiItemResponse, Borrower, PaginatedResponse } from '@/types/api';
+import type { ApiArrayResponse, ApiItemResponse, Borrower, PaginatedResponse, TimeLog } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,8 @@ interface BorrowedBook {
   finished_at: string | null;
   rating: number | null;
   reading_notes: string | null;
+  total_minutes?: number;
+  time_logs?: TimeLog[];
 }
 
 const READING_STATUS_OPTIONS: { value: BorrowedBook['reading_status']; label: string }[] = [
@@ -135,50 +138,57 @@ export default function BorrowedBooksPage() {
                   />
                 </li>
               ) : (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between rounded-sm border border-oak/10 bg-paper-elevated px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-ink">{r.title}</p>
-                    {r.author_name && <p className="truncate text-sm text-ink/60">{r.author_name}</p>}
-                    <p className="text-xs text-ink/50">Kimden: {r.borrower.name}</p>
-                    <p className="text-xs text-ink/40">
-                      {r.borrowed_at}
-                      {r.due_at && ` · Son: ${r.due_at}`}
-                      {r.returned_at && ` · İade: ${r.returned_at}`}
-                    </p>
-                    {r.reading_status !== 'not_started' && (
-                      <p className={`text-xs ${r.reading_status === 'finished' ? 'text-moss' : 'text-brass'}`}>
-                        {r.reading_status === 'finished' ? '✓ Okundu' : 'Okunuyor'}
-                        {r.rating && ` · ${'★'.repeat(r.rating)}`}
+                <li key={r.id} className="rounded-sm border border-oak/10 bg-paper-elevated px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-ink">{r.title}</p>
+                      {r.author_name && <p className="truncate text-sm text-ink/60">{r.author_name}</p>}
+                      <p className="text-xs text-ink/50">Kimden: {r.borrower.name}</p>
+                      <p className="text-xs text-ink/40">
+                        {r.borrowed_at}
+                        {r.due_at && ` · Son: ${r.due_at}`}
+                        {r.returned_at && ` · İade: ${r.returned_at}`}
                       </p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {!r.is_returned && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={savingId === r.id}
-                        onClick={() => handleReturn(r.id)}
+                      {r.reading_status !== 'not_started' && (
+                        <p className={`text-xs ${r.reading_status === 'finished' ? 'text-moss' : 'text-brass'}`}>
+                          {r.reading_status === 'finished' ? '✓ Okundu' : 'Okunuyor'}
+                          {r.rating && ` · ${'★'.repeat(r.rating)}`}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!r.is_returned && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={savingId === r.id}
+                          onClick={() => handleReturn(r.id)}
+                        >
+                          İade Et
+                        </Button>
+                      )}
+                      <button
+                        onClick={() => setEditingId(r.id)}
+                        className="text-xs text-brass underline underline-offset-2"
                       >
-                        İade Et
-                      </Button>
-                    )}
-                    <button
-                      onClick={() => setEditingId(r.id)}
-                      className="text-xs text-brass underline underline-offset-2"
-                    >
-                      Düzenle
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r.id)}
-                      className="text-xs text-spine underline underline-offset-2"
-                    >
-                      Sil
-                    </button>
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="text-xs text-spine underline underline-offset-2"
+                      >
+                        Sil
+                      </button>
+                    </div>
                   </div>
+                  {r.reading_status !== 'not_started' && (
+                    <TimeLogList
+                      endpoint={`/borrowed-books/${r.id}/time-logs`}
+                      logs={r.time_logs ?? []}
+                      totalMinutes={r.total_minutes ?? 0}
+                      onChanged={load}
+                    />
+                  )}
                 </li>
               ),
             )}

@@ -98,6 +98,15 @@ export interface Loan {
   created_at: string;
 }
 
+/** Faz 4: kullanıcının kendi ölçtüğü okuma oturumu günlüğü kaydı. */
+export interface TimeLog {
+  id: string;
+  log_date: string;
+  duration_minutes: number;
+  pages_read: number | null;
+  notes: string | null;
+}
+
 export interface ReadingSession {
   id: string;
   status: ReadingStatus;
@@ -107,6 +116,8 @@ export interface ReadingSession {
   rating: number | null;
   notes: string | null;
   book: Pick<Book, 'id' | 'title' | 'page_count'> | null;
+  total_minutes?: number;
+  time_logs?: TimeLog[];
   created_at: string;
 }
 

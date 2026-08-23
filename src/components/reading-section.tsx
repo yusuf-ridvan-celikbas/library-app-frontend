@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api-client';
+import { TimeLogList } from '@/components/time-log-list';
 import type { PaginatedResponse, ReadingSession, ReadingStatus } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,6 +78,12 @@ export function ReadingSection({ bookId }: { bookId: string }) {
     load();
   }
 
+  async function handleDelete(id: string) {
+    if (!window.confirm('Bu okuma kaydı silinsin mi?')) return;
+    await api.delete(`/reading-sessions/${id}`);
+    load();
+  }
+
   return (
     <fieldset className="space-y-3 rounded-sm border border-oak/10 bg-paper-elevated px-6 py-5">
       <div className="flex items-center justify-between">
@@ -108,19 +115,35 @@ export function ReadingSection({ bookId }: { bookId: string }) {
                 />
               </li>
             ) : (
-              <li key={s.id} className="flex items-center justify-between rounded-md border border-oak/10 bg-paper px-3 py-2">
-                <div className="text-sm">
-                  <span className="font-medium text-ink">{s.status_label}</span>
-                  {s.started_at && <span className="text-ink/50"> · {s.started_at}</span>}
-                  {s.finished_at && <span className="text-ink/50"> → {s.finished_at}</span>}
-                  {s.rating && <span className="text-brass"> · {'★'.repeat(s.rating)}</span>}
+              <li key={s.id} className="rounded-md border border-oak/10 bg-paper px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <span className="font-medium text-ink">{s.status_label}</span>
+                    {s.started_at && <span className="text-ink/50"> · {s.started_at}</span>}
+                    {s.finished_at && <span className="text-ink/50"> → {s.finished_at}</span>}
+                    {s.rating && <span className="text-brass"> · {'★'.repeat(s.rating)}</span>}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setEditingId(s.id)}
+                      className="text-xs text-brass underline underline-offset-2"
+                    >
+                      Düzenle
+                    </button>
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="text-xs text-spine underline underline-offset-2"
+                    >
+                      Sil
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setEditingId(s.id)}
-                  className="text-xs text-brass underline underline-offset-2"
-                >
-                  Düzenle
-                </button>
+                <TimeLogList
+                  endpoint={`/reading-sessions/${s.id}/time-logs`}
+                  logs={s.time_logs ?? []}
+                  totalMinutes={s.total_minutes ?? 0}
+                  onChanged={load}
+                />
               </li>
             ),
           )}
