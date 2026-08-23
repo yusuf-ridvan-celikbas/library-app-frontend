@@ -3,6 +3,7 @@ import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
 
 const CATEGORIES = [
+  { href: '/library-overview', label: 'Kütüphane Detayı', desc: 'Okunan/okunmayan, dağılımlar, okuma süresi hesaplayıcı' },
   { href: '/borrowed-books', label: 'Ödünç Aldıklarım', desc: 'Başkalarından ödünç aldığınız kitaplar' },
   { href: '/gifts', label: 'Hediyeler', desc: 'Hediye ettiğiniz kitapları görün' },
   { href: '/reading/stats', label: 'İstatistikler', desc: 'Toplam sayfa, tempo, aylık dağılım' },
