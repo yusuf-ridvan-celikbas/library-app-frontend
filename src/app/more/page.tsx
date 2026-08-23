@@ -2,15 +2,7 @@ import Link from 'next/link';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
 import { DataExportButton } from '@/components/data-export-button';
-
-const CATEGORIES = [
-  { href: '/reminders', label: 'Hatırlatıcılar', desc: 'Gecikmiş ve yaklaşan son tarihli kayıtlar' },
-  { href: '/library-overview', label: 'Kütüphane Detayı', desc: 'Okunan/okunmayan, dağılımlar, okuma süresi hesaplayıcı' },
-  { href: '/borrowed-books', label: 'Ödünç Aldıklarım', desc: 'Başkalarından ödünç aldığınız kitaplar' },
-  { href: '/gifts', label: 'Hediyeler', desc: 'Hediye ettiğiniz kitapları görün' },
-  { href: '/reading/stats', label: 'İstatistikler', desc: 'Toplam sayfa, tempo, aylık dağılım' },
-  { href: '/manage', label: 'Yönet', desc: 'Yazar, yayınevi, konum, etiket, kişi kayıtları' },
-];
+import { MORE_CATEGORIES } from '@/lib/more-categories';
 
 export default function MorePage() {
   return (
@@ -18,7 +10,7 @@ export default function MorePage() {
       <TopBar title="Kütüphanem" subtitle="Daha Fazla" />
 
       <div className="mx-auto max-w-md space-y-3 px-4 py-6">
-        {CATEGORIES.map((cat) => (
+        {MORE_CATEGORIES.map((cat) => (
           <Link
             key={cat.href}
             href={cat.href}
