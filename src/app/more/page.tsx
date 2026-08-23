@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TopBar } from '@/components/top-bar';
 import { BottomNav } from '@/components/bottom-nav';
+import { DataExportButton } from '@/components/data-export-button';
 
 const CATEGORIES = [
   { href: '/library-overview', label: 'Kütüphane Detayı', desc: 'Okunan/okunmayan, dağılımlar, okuma süresi hesaplayıcı' },
@@ -29,6 +30,8 @@ export default function MorePage() {
             <span className="text-brass">→</span>
           </Link>
         ))}
+
+        <DataExportButton />
       </div>
 
       <BottomNav />
