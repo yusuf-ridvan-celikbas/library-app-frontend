@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api-client';
-import { SearchableSingleSelect } from '@/components/searchable-select';
+import { SearchableMultiSelect } from '@/components/searchable-select';
 import type { ApiArrayResponse, ApiItemResponse, Book, PaginatedResponse, ReadingGoal } from '@/types/api';
-import { Button } from '@/components/ui/button';
 
 interface BorrowedBookLite {
   id: string;
@@ -16,10 +15,12 @@ interface BorrowedBookLite {
  * kitaplar iliştirme. Liste boşken hedef "sayım modunda" çalışmaya
  * devam eder — bu bileşen kullanılmasa bile mevcut hedefler bozulmaz.
  *
+ * KRİTİK UX notu: SearchableMultiSelect kullanılıyor (SearchableSingleSelect
+ * DEĞİL) — çünkü kullanıcı aynı açılır pencereyi kapatmadan art arda
+ * birden fazla kitap işaretleyip kaldırabilmeli. Her toggle, anında
+ * attach/detach isteği tetikler (ayrı bir "Ekle" butonuna gerek yok).
  * İki ayrı seçici var (Kitap / Ödünç Kitap) çünkü bunlar backend'de
- * farklı endpoint'lere gidiyor (attachBook vs attachBorrowedBook) —
- * tek bir birleşik seçiciye zorlamak, kullanıcının "hangi kaynaktan
- * ekliyorum" niyetini gizler.
+ * farklı endpoint'lere gidiyor.
  */
 export function GoalBookList({
   goal,
@@ -31,9 +32,6 @@ export function GoalBookList({
   const [isOpen, setIsOpen] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [borrowedBooks, setBorrowedBooks] = useState<BorrowedBookLite[]>([]);
-  const [selectedBookId, setSelectedBookId] = useState('');
-  const [selectedBorrowedId, setSelectedBorrowedId] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,62 +39,46 @@ export function GoalBookList({
       api.get<PaginatedResponse<Book>>('/books?per_page=100').then((res) => setBooks(res.data));
     }
     if (isOpen && borrowedBooks.length === 0) {
-      api.get<ApiArrayResponse<BorrowedBookLite>>('/borrowed-books?status=all').then((res) => setBorrowedBooks(res.data));
+      api
+        .get<ApiArrayResponse<BorrowedBookLite>>('/borrowed-books?status=all')
+        .then((res) => setBorrowedBooks(res.data));
     }
   }, [isOpen, books.length, borrowedBooks.length]);
 
   const attachedBookIds = goal.books.filter((b) => b.source === 'book').map((b) => b.target_id);
   const attachedBorrowedIds = goal.books.filter((b) => b.source === 'borrowed').map((b) => b.target_id);
 
-  const bookOptions = books.filter((b) => !attachedBookIds.includes(b.id)).map((b) => ({ id: b.id, name: b.title }));
-  const borrowedOptions = borrowedBooks
-    .filter((b) => !attachedBorrowedIds.includes(b.id))
-    .map((b) => ({ id: b.id, name: b.title }));
+  // Filtrelenmiyor — seçili/seçili değil durumu SearchableMultiSelect'in
+  // kendi işaretleme mekanizmasıyla gösteriliyor, aynı pencerede hem
+  // ekleme hem çıkarma yapılabilsin diye.
+  const bookOptions = books.map((b) => ({ id: b.id, name: b.title }));
+  const borrowedOptions = borrowedBooks.map((b) => ({ id: b.id, name: b.title }));
 
-  async function handleAddBook() {
-    if (!selectedBookId) return;
-    setIsSaving(true);
+  async function handleToggleBook(bookId: string) {
     setError(null);
     try {
-      const res = await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books`, {
-        book_id: selectedBookId,
-      });
+      const isAttached = attachedBookIds.includes(bookId);
+      const res = isAttached
+        ? await api.delete<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books/${bookId}`)
+        : await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/books`, { book_id: bookId });
       onChanged(res.data);
-      setSelectedBookId('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Eklenemedi.');
-    } finally {
-      setIsSaving(false);
+      setError(err instanceof ApiError ? err.message : 'İşlem başarısız oldu.');
     }
   }
 
-  async function handleAddBorrowed() {
-    if (!selectedBorrowedId) return;
-    setIsSaving(true);
+  async function handleToggleBorrowed(borrowedId: string) {
     setError(null);
     try {
-      const res = await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/borrowed-books`, {
-        borrowed_book_id: selectedBorrowedId,
-      });
+      const isAttached = attachedBorrowedIds.includes(borrowedId);
+      const res = isAttached
+        ? await api.delete<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/borrowed-books/${borrowedId}`)
+        : await api.post<ApiItemResponse<ReadingGoal>>(`/reading-goals/${goal.id}/borrowed-books`, {
+            borrowed_book_id: borrowedId,
+          });
       onChanged(res.data);
-      setSelectedBorrowedId('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Eklenemedi.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleRemove(source: 'book' | 'borrowed', targetId: string) {
-    try {
-      const path =
-        source === 'book'
-          ? `/reading-goals/${goal.id}/books/${targetId}`
-          : `/reading-goals/${goal.id}/borrowed-books/${targetId}`;
-      const res = await api.delete<ApiItemResponse<ReadingGoal>>(path);
-      onChanged(res.data);
-    } catch {
-      // sessizce yut
+      setError(err instanceof ApiError ? err.message : 'İşlem başarısız oldu.');
     }
   }
 
@@ -130,7 +112,9 @@ export function GoalBookList({
                     )}
                   </span>
                   <button
-                    onClick={() => handleRemove(b.source, b.target_id)}
+                    onClick={() =>
+                      b.source === 'book' ? handleToggleBook(b.target_id) : handleToggleBorrowed(b.target_id)
+                    }
                     className="text-xs text-spine underline underline-offset-2"
                   >
                     Çıkar
@@ -140,43 +124,19 @@ export function GoalBookList({
             </ul>
           )}
 
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <SearchableSingleSelect
-                label="Kendi kitaplığından ekle"
-                items={bookOptions}
-                selectedId={selectedBookId}
-                onChange={setSelectedBookId}
-              />
-            </div>
-            <Button
-              size="sm"
-              onClick={handleAddBook}
-              disabled={!selectedBookId || isSaving}
-              className="bg-oak hover:bg-oak/90"
-            >
-              Ekle
-            </Button>
-          </div>
+          <SearchableMultiSelect
+            label="Kendi kitaplığından ekle/çıkar"
+            items={bookOptions}
+            selectedIds={attachedBookIds}
+            onToggle={handleToggleBook}
+          />
 
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <SearchableSingleSelect
-                label="Ödünç aldıklarından ekle"
-                items={borrowedOptions}
-                selectedId={selectedBorrowedId}
-                onChange={setSelectedBorrowedId}
-              />
-            </div>
-            <Button
-              size="sm"
-              onClick={handleAddBorrowed}
-              disabled={!selectedBorrowedId || isSaving}
-              variant="outline"
-            >
-              Ekle
-            </Button>
-          </div>
+          <SearchableMultiSelect
+            label="Ödünç aldıklarından ekle/çıkar"
+            items={borrowedOptions}
+            selectedIds={attachedBorrowedIds}
+            onToggle={handleToggleBorrowed}
+          />
 
           {error && <p className="text-xs text-spine">{error}</p>}
         </div>
